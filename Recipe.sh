@@ -127,7 +127,7 @@ install_audio_jack2() {
 
 # KDE install
 install_kde() {
-  pacman_install plasma-meta kde-utilities-meta kde-system-meta flatpak flatpak-kcm flatpak-xdg-utils gwenview adwaita-fonts materia-gtk-theme || warn "KDE install issues"
+  pacman_install plasma-meta kde-utilities-meta kde-system-meta flatpak flatpak-kcm flatpak-xdg-utils gwenview adwaita-fonts materia-gtk-theme cachy-update libappindicator-gtk3 system-monitoring-center || warn "KDE install issues"
 }
 
 # Drivers menu actions
@@ -171,7 +171,7 @@ install_drivers_menu() {
 
 # Build tools
 install_build_tools() {
-  pacman_install base-devel git cmake bison flex m4 patch pkgconf jdk8-openjdk icedtea-web || warn "build tools install failed"
+  pacman_install base-devel git bison byacc flex patch pkgconf m4 cmake || warn "build tools install failed"
   ensure_yay
   try_powerpill
 }
@@ -179,7 +179,7 @@ install_build_tools() {
 # Gaming stack
 install_gaming_stack() {
   # When installing steam & lib32 libs, multilib must be enabled - we assume user has it enabled
-  pacman_install steam lutris gamemode lib32-gamemode mangohud lib32-mangohud protonup-qt pipewire-jack pipewire-alsa pipewire-pulse || warn "gaming stack install issues"
+  pacman_install cachyos-gaming-meta piper game-devices-udev|| warn "gaming stack install issues"
 }
 
 # Performance tweaks
