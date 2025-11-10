@@ -3,18 +3,17 @@
 # =====================================================
 #  Arch Linux KDE Optimization Script
 #  Interactive UI with dialog
-#  Works on Arch / EndeavourOS / CachyOS / Garuda
-#  Author: techoraye
+#  Works on Arch, EndeavourOS, CachyOS, Garuda
 # =====================================================
 
 set -e
 
-# -- Ensure dialog is installed --
+# Ensure dialog exists
 if ! command -v dialog &>/dev/null; then
     sudo pacman -S --noconfirm dialog
 fi
 
-# ============ FUNCTIONS ============
+# ======== FUNCTIONS ========
 
 system_update() {
     sudo pacman -Syu --noconfirm
@@ -22,18 +21,37 @@ system_update() {
 
 install_build_tools() {
     sudo pacman -S --needed --noconfirm base-devel git cmake bison flex m4 patch pkgconf \
-        jdk8-openjdk icedtea-web yay powerpill
+        jdk8-openjdk icedtea-web
+
+    # Install yay from AUR if missing
+    if ! command -v yay &>/dev/null; then
+        echo "Installing yay..."
+        git clone https://aur.archlinux.org/yay.git /tmp/yay
+        cd /tmp/yay
+        makepkg -si --noconfirm
+        cd ~
+    fi
+
+    # Try installing powerpill only if available
+    if yay -S --noconfirm powerpill; then
+        echo "Powerpill installed."
+    else
+        echo "Powerpill not found in repos. Skipping."
+    fi
 }
 
 enable_chaotic() {
-    sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
-    sudo pacman-key --lsign-key 3056513887B78AEB
+    sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com || true
+    sudo pacman-key --lsign-key 3056513887B78AEB || true
 
     sudo pacman -U --noconfirm \
         'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' \
         'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
 
-    echo -e "\n[chaotic-aur]\nInclude = /etc/pacman.d/chaotic-mirrorlist" | sudo tee -a /etc/pacman.conf
+    if ! grep -q "\[chaotic-aur\]" /etc/pacman.conf ; then
+        echo -e "\n[chaotic-aur]\nInclude = /etc/pacman.d/chaotic-mirrorlist" | sudo tee -a /etc/pacman.conf
+    fi
+
     sudo pacman -Syu --noconfirm
 }
 
@@ -45,10 +63,10 @@ install_kde() {
 install_drivers() {
     CHOICE=$(dialog --clear --stdout --title "Driver Installation" --menu "Choose your hardware:" 15 60 6 \
     1 "NVIDIA (proprietary)" \
-    2 "NVIDIA (open source - nouveau)" \
+    2 "NVIDIA (nouveau open-source)" \
     3 "AMD GPU" \
     4 "Intel iGPU" \
-    5 "Common WiFi drivers" \
+    5 "Common WiFi Drivers" \
     6 "Return")
 
     clear
@@ -63,54 +81,55 @@ install_drivers() {
 }
 
 install_firedragon() {
-    sudo pacman -S --noconfirm firedragon
+    sudo pacman -S --noconfirm firedragon || echo "Firedragon not available, ensure Chaotic-AUR is enabled"
 }
 
 install_gaming_stack() {
-    sudo pacman -S --noconfirm steam lutris gamemode mangohud goverlay protonup-qt \
+    sudo pacman -S --noconfirm steam lutris \
+        gamemode lib32-gamemode \
+        goverlay \
+        mangohud lib32-mangohud \
+        protonup-qt \
         pipewire pipewire-jack lib32-pipewire pipewire-alsa pipewire-pulse
 }
 
 performance_tweaks() {
 
-    # Enable zram
-    echo "Enabling ZRAM..."
+    # zram
     sudo pacman -S --noconfirm zramswap
     sudo systemctl enable --now zramswap.service
 
-    # CPU governor – performance mode
-    echo "Setting CPU governor to performance..."
+    # CPU governor
     sudo pacman -S --noconfirm cpupower
     echo "GOVERNOR='performance'" | sudo tee /etc/default/cpupower
     sudo systemctl enable --now cpupower.service
 
-    # SSD fstrim weekly
+    # SSD trim
     sudo systemctl enable --now fstrim.timer
 }
 
 plasma_tweaks() {
     kwriteconfig5 --file kwinrc --group Compositing --key MaxFPS 144
     kwriteconfig5 --file kwinrc --group Compositing --key RefreshRate 144
-    kwriteconfig5 --file kwinrc --group KScreen --key ScaleFactor "1"
     kwriteconfig5 --file klaunchrc --group BusyCursorSettings --key Timeout 1
 
-    echo "KDE tweaks applied. Log out & back in for effect."
+    echo "KDE tweaks applied. Reboot recommended."
 }
 
-# ============ MAIN UI LOOP ============
+# ======== MAIN MENU ========
 
 while true; do
-    CHOICE=$(dialog --clear --stdout --title "Arch KDE Optimizer" \
+    CHOICE=$(dialog --clear --stdout --title "Arch KDE Optimization Recipe" \
     --menu "Select an action:" 20 60 10 \
     1 "Full System Update" \
-    2 "Install Build Tools + yay" \
+    2 "Install Build Tools + yay (+powerpill if available)" \
     3 "Enable Chaotic-AUR" \
     4 "Install KDE Plasma Desktop" \
     5 "Install Drivers" \
     6 "Install Firedragon Browser" \
     7 "Install Gaming Stack" \
-    8 "Performance Optimizations (zram, CPU, SSD)" \
-    9 "KDE Plasma UI Tweaks" \
+    8 "Performance Optimizations" \
+    9 "KDE UI Tweaks" \
     10 "Exit")
 
     clear
