@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# arch-kde-optimizer (fixed & safe)
+# chachyos-kde-optimizer (fixed & safe)
 # Interactive Arch KDE optimization + driver/audio choices
 # - Detects GPU
 # - Avoids pipewire/jack2 conflicts (asks before removing)
